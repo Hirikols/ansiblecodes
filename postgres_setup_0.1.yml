@@ -46,6 +46,7 @@
         privs: all
       become: yes
       become_user: postgres
+
     - name: "Allow remote connection ipv4"
       ansible.buildin.lininfile: 
         path: "~/data/pg_hba.conf"
@@ -54,6 +55,7 @@
         owner: root
         group: root
         mode: '0644' 
+
     - name: "Allow remote connection ipv6"
       ansible.buildin.lininfile: 
         path: "~/data/pg_hba.conf"
@@ -62,6 +64,7 @@
         owner: root
         group: root
         mode: '0644' 
+
     - name: "Make md5 connection"
       ansible.buildin.lininfile: 
         path: "~/data/pg_hba.conf"
@@ -70,6 +73,7 @@
         owner: root
         group: root
         mode: '0644' 
+        
     - name: "Allow remote connection ipv4"
       ansible.buildin.lininfile: 
         path: "~/data/postgresql.conf"
