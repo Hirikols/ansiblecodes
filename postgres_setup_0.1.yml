@@ -9,5 +9,5 @@
           - postgresql 
           - postgresql-contrib
           - postgresql-server
-          
+          - python-psycopg2 
           
