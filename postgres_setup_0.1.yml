@@ -46,18 +46,39 @@
         privs: all
       become: yes
       become_user: postgres
-
-    - name: "Allow md5 connection for the db user"
-      postgresql_pg_hba:
-        dest: "~/data/pg_hba.conf"
-        contype: host
-        databases: all
-        method: md5
-        users: "gitbucket"
-        create: true
-      become: yes
-      become_user: postgres
-      notify: restart postgres
+    - name: "Allow remote connection ipv4"
+      ansible.buildin.lininfile: 
+        path: "~/data/pg_hba.conf"
+        search_string: '127.0.0.1/32' 
+        line: 0.0.0.0/0
+        owner: root
+        group: root
+        mode: '0644' 
+    - name: "Allow remote connection ipv6"
+      ansible.buildin.lininfile: 
+        path: "~/data/pg_hba.conf"
+        search_string: '::1/32' 
+        line: ::0/0
+        owner: root
+        group: root
+        mode: '0644' 
+    - name: "Make md5 connection"
+      ansible.buildin.lininfile: 
+        path: "~/data/pg_hba.conf"
+        search_string: 'ident' 
+        line: md5
+        owner: root
+        group: root
+        mode: '0644' 
+    - name: "Allow remote connection ipv4"
+      ansible.buildin.lininfile: 
+        path: "~/data/postgresql.conf"
+        search_string: '#listen_addresses="*"' 
+        line: listen_addresses="*"
+        owner: root
+        group: root
+        mode: '0644'     
+   
 
   handlers:
     - name: restart postgres
