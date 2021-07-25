@@ -76,15 +76,145 @@
         state: present
       notify: restart postgres
       
- 
-    - name: "Load SQL script into a variable"
-      set_fact:
-        migration_sql: "{{ lookup('file', 'gitbucket.sql') }}"
+    - name: "Set localhost connection to trust *"
+      lineinfile: 
+        dest: /var/lib/pgsql/data/pg_hba.conf
+        regexp: "peer" 
+        line: "trust" 
+        state: present
+      notify: restart postgres
 
-    - name: "Execute script from variable"
-      command: "psql gitbucket -c {{ migration_sql }}"
-      become_user: postgres
-      register: sql_response_variable
+    - name: "Create table in db"
+      postgresql_table:
+        db: gitbucket
+        table: test
+        columns:
+        - id bigserial primary key
+        - num int
+        - data varchar(20)
+    
+    - name: "Open 5432/tcp port"
+      firewalld:
+        port: 5432/tcp
+        permanent: yes
+        state: enabled
+        
+    #- name: "Load SQL script into a variable"
+     # set_fact:
+      #  migration_sql: "{{ lookup('file', 'gitbucket.sql') }}"
+
+    #- name: "Execute script from variable"
+     # command: "psql gitbucket -c {{ migration_sql }}"
+      #become_user: postgres
+      #register: sql_response_variable
+    - name: Install Bucardo dependencies
+      yum:
+        name: 
+          - libdbix-safe-perl
+          - libboolean-perl
+          - libdbd-pg-perl
+          - postgresql-plperl-9.4
+          - expect
+      state: present
+
+    - name: Download Bucardo
+      get_url:
+        url: http://bucardo.org/downloads/Bucardo-5.3.1.tar.gz
+        dest: /tmp/bucardo.tar.gz
+
+    - name: Create temporary directory
+      file:
+        state: directory
+        path: /tmp/bucardo
+
+    - name: Unarchive Bucardo
+      unarchive:
+        src: /tmp/bucardo.tar.gz
+        dest: /tmp/bucardo
+        copy: no
+
+    - name: Build Bucardo Makefile
+      shell: "perl Makefile.PL"
+      args:
+        chdir: /tmp/bucardo/Bucardo-5.3.1/
+
+    - name: Make Bucardo
+      shell: "make"
+      args:
+        chdir: /tmp/bucardo/Bucardo-5.3.1/
+
+    - name: Install Bucardo
+      shell: "make install"
+      sudo: Yes
+      sudo_user: root
+      args:
+        chdir: /tmp/bucardo/Bucardo-5.3.1/
+
+    - name: Write install script
+      copy:
+        src: install.sh
+        dest: "/tmp/install_bucardo.sh"
+        owner: postgres
+        mode: 0755
+
+    - name: Create bucardo log directory
+      file:
+        state: directory
+        path: /var/log/bucardo
+
+    - name: Install Bucardo on the database
+      shell: "/tmp/install_bucardo.sh"
+      sudo: Yes
+      sudo_user: postgres
+  
+  handlers:
+    - name: restart postgres
+      service: name=postgresql state=restarted
+
+
+
+- hosts: db1
+  become: yes
+  tasks:
+    - name: "Add local master db to Bucardo"
+      shell: "bucardo add database db1 dbname=gitbucket host=localhost user=gitbucket password=gitbucket"
+      sudo: yes
+      
+
+    - name: Add external  second master to Bucardo
+      shell: "bucardo add database db2 dbname=gitbucket host= user=gitbucket dbpass=gitbucket"
+      sudo: Yes
+      
+
+    - name: Add tables to Bucardo
+      shell: "bucardo add table all --db=db1 --herd=gitbucket_herd"
+      sudo: yes
+    
+    - name: Add sequances to Bucardo
+      shell: "bucardo add sequence all --db=db1 --herd=gitbucket_herd"
+      sudo: yes
+
+    - name: Create dbgroup
+      shell: "bucardo add dbgroup gitbucket_group"
+      sudo: yes
+
+    - name: Add db1 as master
+      shell: "bucardo add dbgroup gitbucket_group db1:source"
+      sudo: yes
+    
+    - name: Add db2 as master
+      shell: "bucardo add dbgroup gitbucket_group db2:source"
+      sudo: yes
+
+    - name: Add sync
+      shell: "bucardo add sync gitbucket_sync herd=gitbucket_herd dbgroup=gitbucket_group"
+      sudo: yes
+    
+    - name: Restart Bucardo
+      shell: "bucardo restart"
+      sudo: yes
+
+    
 
   handlers:
     - name: restart postgres
