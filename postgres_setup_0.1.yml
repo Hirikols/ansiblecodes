@@ -6,10 +6,12 @@
       yum: 
         name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
         state: present
-    
+      tags: packages
+
     - name: "Install Python"
       yum: 
         name: python-pip
+      tags: packages
 
     - name: "Install PostgreSQL"
       yum:
@@ -17,6 +19,7 @@
           - postgresql
           - postgresql-server
           - python-psycopg2
+      tags: packages
 
     - name: "Find out if PostgreSQL is initialized"
       ansible.builtin.stat:
@@ -118,69 +121,83 @@
           - postgresql-plperl-9.4
           - expect
         state: present
+      tags: packages
 
 
     - name: Get dbix_safe
       get_url: 
         url: https://bucardo.org/downloads/dbix_safe.tar.gz 
         dest: /tmp/dbix_safe.tar.gz 
+      tags: packages
 
     - name: Create temporary directory
       file: 
         state: directory
         path: /tmp/dbix
+      tags: packages
+
     - name: Unarchive Dbix_safe
       unarchive:
         src: /tmp/dbix_safe.tar.gz
         dest: /tmp/dbix
         copy: no
-    
+      tags: packages
+
     - name: Build Dbix MakeFile
       shell: "perl Makefile.PL"
       args:
         chdir: /tmp/dbix/DBIx-Safe-1.2.5/
+      tags: packages
 
     - name: Make Dbix
       shell: "make"
       args:
         chdir: /tmp/dbix/DBIx-Safe-1.2.5/
+      tags: packages
 
     - name: Install Dbix
       shell: "sudo make install"
       args:
         chdir: /tmp/dbix/DBIx-Safe-1.2.5/
+      tags: packages
 
     - name: Download Bucardo
       get_url:
         url: http://bucardo.org/downloads/Bucardo-5.3.1.tar.gz
         dest: /tmp/bucardo.tar.gz
+      tags: packages
 
     - name: Create temporary directory
       file:
         state: directory
         path: /tmp/bucardo
+      tags: packages
 
     - name: Unarchive Bucardo
       unarchive:
         src: /tmp/bucardo.tar.gz
         dest: /tmp/bucardo
         copy: no
+      tags: packages
 
     - name: Build Bucardo Makefile
       shell: "perl Makefile.PL"
       args:
         chdir: /tmp/bucardo/Bucardo-5.3.1/
+      tags: packages
 
     - name: Make Bucardo
       shell: "make"
       args:
         chdir: /tmp/bucardo/Bucardo-5.3.1/
+      tags: packages
 
     - name: Install Bucardo
       shell: "sudo make install"
       args:
         chdir: /tmp/bucardo/Bucardo-5.3.1/
-
+      tags: packages
+      
     - name: Write install script
       copy:
         src: install.sh
@@ -249,5 +266,4 @@
   handlers:
     - name: restart postgres
       service: name=postgresql state=restarted
-
 
