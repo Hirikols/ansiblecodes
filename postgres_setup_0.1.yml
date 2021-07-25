@@ -2,7 +2,15 @@
 - hosts: all
   become: yes
   tasks:
+    - name: "Install EPEL-release"
+      yum: 
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        state: present
     
+    - name: "Install Python"
+      yum: 
+        name: python-pip
+
     - name: "Install PostgreSQL"
       yum:
         name: 
@@ -59,6 +67,15 @@
       become: yes
       become_user: postgres
       notify: restart postgres
+
+    - name: "Set listen_address to *"
+      lineinfile: 
+        dest: /var/lib/pgsql/data/postgresql.conf
+        regexp: "#listen_addresses = 'localhost'" 
+        line: "listen_addresses = '*'" 
+        state: present
+        notify: restart postgres
+        sudo: yes
  
    # - name: "Load SQL script into a variable"
   #  set_fact:
