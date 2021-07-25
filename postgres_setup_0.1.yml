@@ -98,7 +98,7 @@
         port: 5432/tcp
         permanent: yes
         state: enabled
-        
+
     #- name: "Load SQL script into a variable"
      # set_fact:
       #  migration_sql: "{{ lookup('file', 'gitbucket.sql') }}"
@@ -107,6 +107,7 @@
      # command: "psql gitbucket -c {{ migration_sql }}"
       #become_user: postgres
       #register: sql_response_variable
+   
     - name: Install Bucardo dependencies
       yum:
         name: 
@@ -115,7 +116,7 @@
           - libdbd-pg-perl
           - postgresql-plperl-9.4
           - expect
-      state: present
+        state: present
 
     - name: Download Bucardo
       get_url:
@@ -144,9 +145,7 @@
         chdir: /tmp/bucardo/Bucardo-5.3.1/
 
     - name: Install Bucardo
-      shell: "make install"
-      sudo: Yes
-      sudo_user: root
+      shell: "sudo make install"
       args:
         chdir: /tmp/bucardo/Bucardo-5.3.1/
 
@@ -163,9 +162,8 @@
         path: /var/log/bucardo
 
     - name: Install Bucardo on the database
-      shell: "/tmp/install_bucardo.sh"
-      sudo: Yes
-      sudo_user: postgres
+      shell: "sudo /tmp/install_bucardo.sh"
+      
   
   handlers:
     - name: restart postgres
@@ -178,41 +176,41 @@
   tasks:
     - name: "Add local master db to Bucardo"
       shell: "bucardo add database db1 dbname=gitbucket host=localhost user=gitbucket password=gitbucket"
-      sudo: yes
+      
       
 
     - name: Add external  second master to Bucardo
       shell: "bucardo add database db2 dbname=gitbucket host= user=gitbucket dbpass=gitbucket"
-      sudo: Yes
+      
       
 
     - name: Add tables to Bucardo
       shell: "bucardo add table all --db=db1 --herd=gitbucket_herd"
-      sudo: yes
+     
     
     - name: Add sequances to Bucardo
       shell: "bucardo add sequence all --db=db1 --herd=gitbucket_herd"
-      sudo: yes
+      
 
     - name: Create dbgroup
       shell: "bucardo add dbgroup gitbucket_group"
-      sudo: yes
+      
 
     - name: Add db1 as master
       shell: "bucardo add dbgroup gitbucket_group db1:source"
-      sudo: yes
+      
     
     - name: Add db2 as master
       shell: "bucardo add dbgroup gitbucket_group db2:source"
-      sudo: yes
+      
 
     - name: Add sync
       shell: "bucardo add sync gitbucket_sync herd=gitbucket_herd dbgroup=gitbucket_group"
-      sudo: yes
+      
     
     - name: Restart Bucardo
       shell: "bucardo restart"
-      sudo: yes
+      
 
     
 
