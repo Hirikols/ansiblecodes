@@ -77,10 +77,12 @@
       notify: restart postgres
       
     - name: "Set localhost connection to trust *"
-      lineinfile: 
-        dest: /var/lib/pgsql/data/pg_hba.conf
-        regexp: "peer" 
-        line: "trust" 
+      postgresql_pg_hba:
+        dest: "~/data/pg_hba.conf"
+        contype: local
+        databases: all
+        method: trust
+        users: all
         state: present
       notify: restart postgres
 
@@ -111,12 +113,42 @@
     - name: Install Bucardo dependencies
       yum:
         name: 
-          - libdbix-safe-perl
           - libboolean-perl
           - libdbd-pg-perl
           - postgresql-plperl-9.4
           - expect
         state: present
+
+
+    - name: Get dbix_safe
+      get_url: 
+        url: https://bucardo.org/downloads/dbix_safe.tar.gz 
+        dest: /tmp/dbix_safe.tar.gz 
+
+    - name: Create temporary directory
+      file: 
+        state: directory
+        path: /tmp/dbix
+    - name: Unarchive Dbix_safe
+      unarchive:
+        src: /tmp/dbix_safe.tar.gz
+        dest: /tmp/dbix
+        copy: no
+    
+    - name: Build Dbix MakeFile
+      shell: "perl Makefile.PL"
+      args:
+        chdir: /tmp/dbix/DBIx-Safe-1.2.5/
+
+    - name: Make Dbix
+      shell: "make"
+      args:
+        chdir: /tmp/dbix/DBIx-Safe-1.2.5/
+
+    - name: Install Dbix
+      shell: "sudo make install"
+      args:
+        chdir: /tmp/dbix/DBIx-Safe-1.2.5/
 
     - name: Download Bucardo
       get_url:
@@ -217,4 +249,5 @@
   handlers:
     - name: restart postgres
       service: name=postgresql state=restarted
+
 
