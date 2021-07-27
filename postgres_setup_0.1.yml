@@ -33,13 +33,6 @@
     - name: "Start and enable services"
       service: name=postgresql state=started enabled=yes
     
-    - name: "Create app database"
-      postgresql_db:
-        state: present
-        name: "gitbucket"
-      become: yes
-      become_user: postgres
-
     - name: "Create db user"
       postgresql_user:
         state: present
@@ -48,23 +41,19 @@
       become: yes
       become_user: postgres
 
-    - name: "Grant db user access to app db"
-      postgresql_privs:
-        type: database
-        database: "gitbucket"
-        roles: "gitbucket"
-        grant_option: no
-        privs: all
-      become: yes
-      become_user: postgres
+    - name: "Create database"
+      postgresql_db:
+        state: present
+        name: gitbucket
+        owner: gitbucket
 
     - name: "Allow md5 connection for the db user"
       postgresql_pg_hba:
-        dest: "~/data/pg_hba.conf"
+        dest: "/var/lib/pgsql/data/pg_hba.conf"
         contype: host
         databases: all
         method: md5
-        users: "gitbucket"
+        users: all
         source: 0.0.0.0/0
         create: true
       become: yes
@@ -81,13 +70,16 @@
       
     - name: "Set localhost connection to trust *"
       postgresql_pg_hba:
-        dest: "~/data/pg_hba.conf"
+        dest: "/var/lib/pgsql/data/pg_hba.conf"
         contype: local
         databases: all
         method: trust
         users: all
         state: present
       notify: restart postgres
+
+    - name: "Restart postgresql"
+      service: name=postgresql state=restarted 
 
     - name: "Create table in db"
       postgresql_table:
@@ -103,7 +95,7 @@
         port: 5432/tcp
         permanent: yes
         state: enabled
-
+        immediate: yes
     #- name: "Load SQL script into a variable"
      # set_fact:
       #  migration_sql: "{{ lookup('file', 'gitbucket.sql') }}"
@@ -197,23 +189,25 @@
       args:
         chdir: /tmp/bucardo/Bucardo-5.3.1/
       tags: packages
-      
-    - name: Write install script
-      copy:
-        src: install.sh
-        dest: "/tmp/install_bucardo.sh"
-        owner: postgres
-        mode: 0755
 
+    
     - name: Create bucardo log directory
       file:
         state: directory
         path: /var/log/bucardo
-
-    - name: Install Bucardo on the database
-      shell: "sudo /tmp/install_bucardo.sh"
-      
   
+    - name: Install bucardo
+      shell: |
+        set timeout 300
+        spawn bucardo install --pid-dir /var/run --dbuser postgres --dbname postgres
+
+        expect "proceed"
+        send "P\r"
+
+        exit 0
+      args:
+        executable: /usr/bin/expect
+
   handlers:
     - name: restart postgres
       service: name=postgresql state=restarted
@@ -224,12 +218,12 @@
   become: yes
   tasks:
     - name: "Add local master db to Bucardo"
-      shell: "bucardo add database db1 dbname=gitbucket host=localhost user=gitbucket password=gitbucket"
+      shell: "bucardo add database db1 dbname=gitbucket host=127.0.0.1 user=gitbucket password=gitbucket"
       
       
 
     - name: Add external  second master to Bucardo
-      shell: "bucardo add database db2 dbname=gitbucket host= user=gitbucket dbpass=gitbucket"
+      shell: "bucardo add database db2 dbname=gitbucket host={{db2}} user=gitbucket dbpass=gitbucket"
       
       
 
