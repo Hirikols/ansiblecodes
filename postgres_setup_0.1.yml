@@ -111,9 +111,9 @@
     - name: Install Bucardo dependencies
       yum:
         name: 
-          - libboolean-perl
-          - libdbd-pg-perl
-          - postgresql-plperl-9.4
+          - perl-boolean
+          - perl-DBD-Pg
+          - postgresql-plperl
           - expect
         state: present
       tags: packages
