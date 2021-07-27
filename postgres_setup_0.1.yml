@@ -99,25 +99,17 @@
         name: gitbucket
         owner: gitbucket
 
-    - name: "Create table in db"
-      postgresql_table:
-        db: gitbucket
-        table: test
-        owner: gitbucket
-        columns:
-        - id bigserial primary key
-        - num int
-        - data varchar(20)
-
-    
-    #- name: "Load SQL script into a variable"
-     # set_fact:
-      #  migration_sql: "{{ lookup('file', 'gitbucket.sql') }}"
-
-    #- name: "Execute script from variable"
-     # command: "psql gitbucket -c {{ migration_sql }}"
-      #become_user: postgres
-      #register: sql_response_variable
+    - name: "Copy sql dump file"
+      copy:
+        src: /etc/ansible/gitbucket.sql
+        dest: /tmp/gitbucket.sql
+        mode: '0644'
+        
+    - name: "Fill database from dump file"
+      postgresql_db:
+        name: "gitbucket"
+        state: restore
+        target: /tmp/gitbucket.sql
    
     - name: Install Bucardo dependencies
       yum:
@@ -127,6 +119,7 @@
           - perl-DBD-Pg
           - postgresql-plperl
           - expect
+          - perl-Sys-Syslog
         state: present
       tags: packages
 
