@@ -1,0 +1,38 @@
+---
+- hosts: db1
+  become: yes
+  tasks: 
+    
+
+    - name: "Add local master db to Bucardo"
+      shell: "bucardo add database db1 dbname='{{app_database}}' host=127.0.0.1 user='{{app_user}}' password='{{app_pass}}'"
+      
+    - name: Add external  second master to Bucardo
+      shell: "bucardo add database db2 dbname='{{app_database}}' host='{{db2_address}}' user='{{app_user}}' dbpass='{{app_pass}}'"
+      
+    - name: Add external  third master to Bucardo
+      shell: "bucardo add database db3 dbname='{{app_database}}' host='{{db3_address}}' user='{{app_user}}' dbpass='{{app_pass}}'"
+
+    - name: Add tables to Bucardo
+      shell: "bucardo add table all --db=db1 --herd=gitbucket_herd"
+        
+    - name: Add sequances to Bucardo
+      shell: "bucardo add sequence all --db=db1 --herd=gitbucket_herd"
+      
+    - name: Create dbgroup
+      shell: "bucardo add dbgroup gitbucket_group"
+      
+    - name: Add db1 as master
+      shell: "bucardo add dbgroup gitbucket_group db1:source"
+      
+    - name: Add db2 as master
+      shell: "bucardo add dbgroup gitbucket_group db2:source"
+      
+    - name: Add db3 as master
+      shell: "bucardo add dbgroup gitbucket_group db3:source"
+
+    - name: Add sync
+      shell: "bucardo add sync gitbucket_sync herd=gitbucket_herd dbgroup=gitbucket_group"
+      
+    - name: Restart Bucardo
+      shell: "bucardo restart"
