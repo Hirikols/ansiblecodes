@@ -1,0 +1,109 @@
+---
+- hosts: databases
+  become: yes
+  tasks:
+    - include: vars.yml
+
+    - name: "Install Bucardo dependencies"
+      yum:
+        name: 
+          - perl-devel 
+          - perl-boolean
+          - perl-DBD-Pg
+          - postgresql-plperl
+          - expect
+          - perl-Sys-Syslog
+        state: present
+     
+
+
+    - name: "Get dbix_safe"
+      get_url: 
+        url: "{{Dbix_safe_url}}"
+        dest: /tmp/dbix_safe.tar.gz 
+      
+
+    - name: Create temporary directory
+      file: 
+        state: directory
+        path: /tmp/dbix
+      
+
+    - name: Unarchive Dbix_safe
+      unarchive:
+        src: /tmp/dbix_safe.tar.gz
+        dest: /tmp/dbix
+        copy: no
+     
+
+    - name: Build Dbix MakeFile
+      shell: "perl Makefile.PL"
+      args:
+        chdir: /tmp/dbix/DBIx-Safe-"{{Dbix_version}}"/
+      
+
+    - name: Make Dbix
+      shell: "make"
+      args:
+        chdir: /tmp/dbix/DBIx-Safe-"{{Dbix_version}}"/
+      
+
+    - name: Install Dbix
+      shell: "sudo make install"
+      args:
+        chdir: /tmp/dbix/DBIx-Safe-"{{Dbix_version}}"/
+      
+
+    - name: Download Bucardo
+      get_url:
+        url: "{{Bucardo_url}}"
+        dest: /tmp/bucardo.tar.gz
+      
+
+    - name: Create temporary directory
+      file:
+        state: directory
+        path: /tmp/bucardo
+      tags: packages
+
+    - name: Unarchive Bucardo
+      unarchive:
+        src: /tmp/bucardo.tar.gz
+        dest: /tmp/bucardo
+        copy: no
+      tags: packages
+
+    - name: Build Bucardo Makefile
+      shell: "perl Makefile.PL"
+      args:
+        chdir: /tmp/bucardo/Bucardo-"{{Bucardo_version}}"/
+      tags: packages
+
+    - name: Make Bucardo
+      shell: "make"
+      args:
+        chdir: /tmp/bucardo/Bucardo-"{{Bucardo_version}}"/
+      tags: packages
+
+    - name: Install Bucardo
+      shell: "sudo make install"
+      args:
+        chdir: /tmp/bucardo/Bucardo-"{{Bucardo_version}}"/
+      tags: packages
+
+    
+    - name: Create bucardo log directory
+      file:
+        state: directory
+        path: /var/log/bucardo
+  
+    - name: Install bucardo
+      shell: |
+        set timeout 300
+        spawn bucardo install --pid-dir /var/run --dbuser "{{postgresql_main_user}}" --dbname "{{postgresql_main_database}}"
+        expect "to quit:"
+        send P\n
+        interact
+        exit 0
+      args:
+        executable: /usr/bin/expect
