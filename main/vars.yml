@@ -1,0 +1,13 @@
+--- 
+app_database: gitbucket
+app_pass: gitbucket
+app_user: gitbucket
+postgresql_data_directory: /var/lib/pgsql/data/
+postgresql_main_user: postgres
+postgresql_main_database: postgres
+db2_address: 
+db3_address:
+Dbix_safe_url: https://bucardo.org/downloads/dbix_safe.tar.gz 
+Bucardo_url: http://bucardo.org/downloads/Bucardo-5.3.1.tar.gz
+Bucardo_version: 5.3.1
+Dbix_version: 1.2.5
