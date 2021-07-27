@@ -47,6 +47,16 @@
       become_user: postgres
       notify: restart postgres
 
+    - name: "remove ident 127.0.0.1/32 connection"
+      postgresql_pg_hba: 
+        dest: "/var/lib/pgsql/data/pg_hba.conf"
+        contype: host
+        databases: all
+        method: ident
+        users: all 
+        source: 127.0.0.1/32
+        state: absent
+
     - name: "Set listen_address to *"
       lineinfile: 
         dest: /var/lib/pgsql/data/postgresql.conf
@@ -93,11 +103,12 @@
       postgresql_table:
         db: gitbucket
         table: test
+        owner: gitbucket
         columns:
         - id bigserial primary key
         - num int
         - data varchar(20)
-    
+
     
     #- name: "Load SQL script into a variable"
      # set_fact:
@@ -111,6 +122,7 @@
     - name: Install Bucardo dependencies
       yum:
         name: 
+          - perl-devel 
           - perl-boolean
           - perl-DBD-Pg
           - postgresql-plperl
@@ -204,9 +216,9 @@
         set timeout 300
         spawn bucardo install --pid-dir /var/run --dbuser postgres --dbname postgres
 
-        expect "proceed"
-        send "P\r"
-
+        expect "to quit:"
+        send P\n
+        interact
         exit 0
       args:
         executable: /usr/bin/expect
@@ -226,7 +238,7 @@
       
 
     - name: Add external  second master to Bucardo
-      shell: "bucardo add database db2 dbname=gitbucket host={{db2}} user=gitbucket dbpass=gitbucket"
+      shell: "bucardo add database db2 dbname=gitbucket host= user=gitbucket dbpass=gitbucket"
       
       
 
