@@ -104,7 +104,7 @@
         src: /etc/ansible/gitbucket.sql
         dest: /tmp/gitbucket.sql
         mode: '0644'
-        
+
     - name: "Fill database from dump file"
       postgresql_db:
         name: "gitbucket"
@@ -233,7 +233,8 @@
     - name: Add external  second master to Bucardo
       shell: "bucardo add database db2 dbname=gitbucket host= user=gitbucket dbpass=gitbucket"
       
-      
+    - name: Add external  third master to Bucardo
+      shell: "bucardo add database db3 dbname=gitbucket host= user=gitbucket dbpass=gitbucket" 
 
     - name: Add tables to Bucardo
       shell: "bucardo add table all --db=db1 --herd=gitbucket_herd"
@@ -254,6 +255,8 @@
     - name: Add db2 as master
       shell: "bucardo add dbgroup gitbucket_group db2:source"
       
+    - name: Add db3 as master
+      shell: "bucardo add dbgroup gitbucket_group db3:source"
 
     - name: Add sync
       shell: "bucardo add sync gitbucket_sync herd=gitbucket_herd dbgroup=gitbucket_group"
