@@ -33,20 +33,7 @@
     - name: "Start and enable services"
       service: name=postgresql state=started enabled=yes
     
-    - name: "Create db user"
-      postgresql_user:
-        state: present
-        name: "gitbucket"
-        password: "gitbucket"
-      become: yes
-      become_user: postgres
-
-    - name: "Create database"
-      postgresql_db:
-        state: present
-        name: gitbucket
-        owner: gitbucket
-
+    
     - name: "Allow md5 connection for the db user"
       postgresql_pg_hba:
         dest: "/var/lib/pgsql/data/pg_hba.conf"
@@ -81,6 +68,27 @@
     - name: "Restart postgresql"
       service: name=postgresql state=restarted 
 
+    - name: "Open 5432/tcp port"
+      firewalld:
+        port: 5432/tcp
+        permanent: yes
+        state: enabled
+        immediate: yes
+
+    - name: "Create db user"
+      postgresql_user:
+        state: present
+        name: "gitbucket"
+        password: "gitbucket"
+      become: yes
+      become_user: postgres
+
+    - name: "Create database"
+      postgresql_db:
+        state: present
+        name: gitbucket
+        owner: gitbucket
+
     - name: "Create table in db"
       postgresql_table:
         db: gitbucket
@@ -90,12 +98,7 @@
         - num int
         - data varchar(20)
     
-    - name: "Open 5432/tcp port"
-      firewalld:
-        port: 5432/tcp
-        permanent: yes
-        state: enabled
-        immediate: yes
+    
     #- name: "Load SQL script into a variable"
      # set_fact:
       #  migration_sql: "{{ lookup('file', 'gitbucket.sql') }}"
