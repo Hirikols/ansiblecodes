@@ -1,0 +1,5 @@
+---
+- include: postgres_setup.yml
+- include: bucardo_setup.yml
+- include: bucardo_configurate.yml
+- include: haproxy.yml

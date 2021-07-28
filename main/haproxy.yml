@@ -1,0 +1,56 @@
+---
+- hosts: loadbalancer
+  become: yes
+  tasks:
+    - name: "Install EPEL-release"
+      yum: 
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        state: present
+
+    - name: "Install Python"
+      yum: 
+        name: python-pip
+    
+    - name: "Install Haproxy"
+      yum:
+        name: haproxy
+    
+    - name: "Start and enable services"
+      service: name=haproxy state=started enabled=yes
+    
+    - name: "Copy HAproxy config"
+      copy:
+        src: /etc/ansible/haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+        mode: 0644
+    
+    - name: "Copy firewall service"
+      copy: 
+        src: /etc/ansible/haproxy.xml
+        dest: /etc/firewalld/services/haproxy.xml
+        mode: 0640
+
+    - name: "Execute restecon"
+      shell: "restorecon haproxy.xml"
+      args:
+        chdir: /etc/firewalld/services
+    
+    - name: "Add service"
+      firewalld:
+        service: haproxy
+        permanent: yes
+        state: enabled
+        
+
+    - name: "Open ports 5000 "
+      firewalld: 
+        port: 5432/tcp
+        permanent: yes
+        state: enabled
+        immediate: yes
+
+    - name: "Reload firewall"
+      shell: "firewall-cmd --reload "
+      
+    - name: "Restart HAproxy"
+      service: name=haproxy state=restarted
