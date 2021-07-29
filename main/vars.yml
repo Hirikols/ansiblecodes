@@ -1,0 +1,51 @@
+--- 
+databases:
+  hosts:
+    db1: 
+      ansible_host: "10.26.0.216"
+      ansible_user: "root"
+      
+    db2: 
+      ansible_host: "10.26.0.184"
+      ansible_user: "root"
+      
+    db3: 
+      ansible_host: "10.26.0.165"
+      ansible_user: "root"
+      
+  vars:
+    app_database: "gitbucket"
+    app_pass: "gitbucket"
+    app_user: "gitbucket"
+    postgresql_data_directory: "/var/lib/pgsql/data/"
+    postgresql_main_user: "postgres"
+    postgresql_main_database: "postgres"
+    db2_address: 
+    db3_address:
+    Dbix_safe_url: "https://bucardo.org/downloads/dbix_safe.tar.gz" 
+    Bucardo_url: "http://bucardo.org/downloads/Bucardo-5.3.1.tar.gz"
+    
+loadbalancer:
+  hosts:
+    haproxy:
+      ansible_host: "10.26.0."
+      ansible_user: "root"
+  vars: 
+    app_database: "gitbucket"
+    app_pass: "gitbucket"
+    app_user: "gitbucket"
+    postgresql_data_directory: "/var/lib/pgsql/data/"
+    postgresql_main_user: "postgres"
+    postgresql_main_database: "postgres"
+    databases:
+      name:
+        - db1
+        - db2
+        - db3
+      hosts:
+        - "10.26.0.216"
+        - "10.26.0.184"
+        - "10.26.0.165"
+    port: "5432"
+
+  

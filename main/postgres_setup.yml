@@ -1,0 +1,114 @@
+---
+- hosts: databases
+  become: yes
+  tasks: 
+    
+
+    - name: "Install EPEL-release"
+      yum: 
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        state: present
+      
+
+    - name: "Install Python"
+      yum: 
+        name: python-pip
+      
+
+    - name: "Install PostgreSQL"
+      yum:
+        name: 
+          - postgresql
+          - postgresql-server
+          - python-psycopg2
+      
+
+    - name: "Find out if PostgreSQL is initialized"
+      ansible.builtin.stat:
+        path: "{{postgresql_data_directory}}pg_hba.conf"
+      register: postgres_data
+
+    - name: "Initialize PostgreSQL"
+      shell: "postgresql-setup initdb"
+      when: not postgres_data.stat.exists
+
+    - name: "Start and enable services"
+      service: name=postgresql state=started enabled=yes
+    
+    
+    - name: "Allow md5 connection for the db user"
+      postgresql_pg_hba:
+        dest: "{{postgresql_data_directory}}pg_hba.conf"
+        contype: host
+        databases: all
+        method: md5
+        users: all
+        source: 0.0.0.0/0
+        create: true
+      become: yes
+      become_user: "{{postgresql_main_user}}"
+      
+
+    - name: "remove ident 127.0.0.1/32 connection"
+      postgresql_pg_hba: 
+        dest: "{{postgresql_data_directory}}pg_hba.conf"
+        contype: host
+        databases: all
+        method: ident
+        users: all 
+        source: 127.0.0.1/32
+        state: absent
+
+    - name: "Set listen_address to *"
+      lineinfile: 
+        dest: "{{postgresql_data_directory}}postgresql.conf"
+        regexp: "#listen_addresses = 'localhost'" 
+        line: "listen_addresses = '*'" 
+        state: present
+      
+      
+    - name: "Set localhost connection to trust *"
+      postgresql_pg_hba:
+        dest: "{{postgresql_data_directory}}pg_hba.conf"
+        contype: local
+        databases: all
+        method: trust
+        users: all
+        state: present
+      
+
+    - name: "Restart postgresql"
+      service: name=postgresql state=restarted 
+
+    - name: "Open 5432/tcp port"
+      firewalld:
+        port: 5432/tcp
+        permanent: yes
+        state: enabled
+        immediate: yes
+
+    - name: "Create db user"
+      postgresql_user:
+        state: present
+        name: "{{app_user}}"
+        password: "{{app_pass}}"
+      become: yes
+      become_user: "{{postgresql_main_user}}"
+
+    - name: "Create database"
+      postgresql_db:
+        state: present
+        name: "{{app_database}}"
+        owner: "{{app_user}}"
+
+    - name: "Copy sql dump file"
+      copy:
+        src: /etc/ansible/gitbucket.sql
+        dest: /tmp/gitbucket.sql
+        mode: '0644'
+
+    - name: "Fill database from dump file"
+      postgresql_db:
+        name: "{{app_database}}"
+        state: restore
+        target: /tmp/gitbucket.sql
