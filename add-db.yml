@@ -1,8 +1,9 @@
 ---
-- hosts: "{{['databases'][-1]}}"
+- hosts: "{{node}}"
   become: yes
   tasks: 
-    
+    - debug: var=hostvars['{{node}}']['ansible_default_ipv4']['address']
+
 
     - name: "Install EPEL-release"
       yum: 
@@ -221,7 +222,7 @@
   become: yes
   tasks:
     - name: Add external  master to Bucardo
-      shell: "bucardo add database '{{node}}' dbname='{{app_database}}' host='{{ hostvars[databases[-1]['ansible_host'] }}' user='{{app_user}}' dbpass='{{app_pass}}'"
+      shell: "bucardo add database '{{node}}' dbname='{{app_database}}' host='{{ var }}' user='{{app_user}}' dbpass='{{app_pass}}'"
      
     - name: Add new db as master
       shell: "bucardo add dbgroup gitbucket_group '{{node}}':source"
