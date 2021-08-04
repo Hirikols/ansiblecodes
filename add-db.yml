@@ -238,7 +238,7 @@
   tasks:
     - name: "Copy HAproxy config"
       template:
-        src: /main/haproxy.cfg
+        src: haproxy.cfg
         dest: /etc/haproxy/haproxy.cfg
         mode: 0644
     
