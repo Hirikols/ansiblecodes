@@ -1,6 +1,8 @@
 ---
 - hosts: " {{ node }} "
   become: yes
+  vars:  
+    node_ip: "{{ hostvars['{{node}}']['ansible_host'] }}"
   tasks: 
     
 
@@ -221,7 +223,7 @@
   become: yes
   tasks:
     - name: Add external  master to Bucardo
-      shell: "bucardo add database '{{node}}' dbname='{{app_database}}' host='{{ hostvars[groups['databases']['{{test}}']]['ansible_host']}}' user='{{app_user}}' dbpass='{{app_pass}}'"
+      shell: "bucardo add database '{{node}}' dbname='{{app_database}}' host='{{node_ip}}' user='{{app_user}}' dbpass='{{app_pass}}'"
      
     - name: Add new db as master
       shell: "bucardo add dbgroup gitbucket_group '{{node}}':source"
