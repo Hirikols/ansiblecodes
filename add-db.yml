@@ -1,5 +1,5 @@
 ---
-- hosts: " {{ host }} "
+- hosts: " {{ node }} "
   become: yes
   tasks: 
     
@@ -221,10 +221,10 @@
   become: yes
   tasks:
     - name: Add external  master to Bucardo
-      shell: "bucardo add database '{{db_name}}' dbname='{{app_database}}' host='{{db3_address}}' user='{{app_user}}' dbpass='{{app_pass}}'"
+      shell: "bucardo add database '{{node}}' dbname='{{app_database}}' host='{{db3_address}}' user='{{app_user}}' dbpass='{{app_pass}}'"
      
     - name: Add new db as master
-      shell: "bucardo add dbgroup gitbucket_group '{{db_name}}':source"
+      shell: "bucardo add dbgroup gitbucket_group '{{node}}':source"
     
     - name: Restart Bucardo
       shell: "bucardo restart"  
