@@ -2,7 +2,7 @@
 - hosts: " {{ node }} "
   become: yes
   vars:  
-    node_ip: "{{ hostvars['{{node}}']['ansible_host'] }}"
+    node_ip: "10.26.0.241"
   tasks: 
     
 
