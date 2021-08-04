@@ -221,7 +221,7 @@
 - hosts: db1
   become: yes
   vars:
-    node_ip: "{{hostvars['{{node}}']['ansible_default_ipv4']['address']}}"
+    node_ip: "{{hostvars['{{node_name}}']['ansible_default_ipv4']['address']}}"
   tasks:
     - name: Add external  master to Bucardo
       shell: "bucardo add database '{{node}}' dbname='{{app_database}}' host='{{ node_ip }}' user='{{app_user}}' dbpass='{{app_pass}}'"
