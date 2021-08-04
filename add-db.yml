@@ -232,7 +232,7 @@
     - name: "Reload bucardo sync"
       shell: "bucardo reload gitbucket_sync"
 
-- host: loadbalancer
+- hosts: loadbalancer
   become: yes
   tasks:
     - name: "Copy HAproxy config"
