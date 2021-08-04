@@ -1,5 +1,5 @@
 ---
-- hosts: "{{host}}"
+- hosts: " {{ host }} "
   become: yes
   tasks: 
     
@@ -216,18 +216,19 @@
       args:
         executable: /usr/bin/expect
          
-    - name: Add external  master to Bucardo
-      shell: "bucardo add database {{'db_name'}} dbname='{{app_database}}' host='{{db3_address}}' user='{{app_user}}' dbpass='{{app_pass}}'"
-     
-    - name: Add new db as master
-      shell: "bucardo add dbgroup gitbucket_group {{'db_name'}}:source"
-    
-    - name: Restart Bucardo
-      shell: "bucardo restart"
 
 - hosts: db1
   become: yes
   tasks:
+    - name: Add external  master to Bucardo
+      shell: "bucardo add database '{{db_name}}' dbname='{{app_database}}' host='{{db3_address}}' user='{{app_user}}' dbpass='{{app_pass}}'"
+     
+    - name: Add new db as master
+      shell: "bucardo add dbgroup gitbucket_group '{{db_name}}':source"
+    
+    - name: Restart Bucardo
+      shell: "bucardo restart"  
+
     - name: "Reload bucardo sync"
       shell: "bucardo reload gitbucket_sync"
 
